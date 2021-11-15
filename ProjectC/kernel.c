@@ -2,7 +2,7 @@ void printString(char*);
 void printChar(char);
 void readString(char*);
 void readSector(char*,int);
-void readFile(char*,char*,int*);
+int readFile(char*,char*,int*);
 void handleInterrupt21(int,int,int,int);
 void executeProgram(char*);
 void terminate();
@@ -10,21 +10,30 @@ void terminate();
 
 void main(){
 
+	makeInterrupt21();
+	interrupt(0x21,4,"shell",0,0);
+
+/*
+	makeInterrupt21();
+	interrupt(0x21,5,"tstpr2",0,0);
+*/
 /*
 	makeInterrupt21();
 	interrupt(0x21,4,"tstpr1",0,0);
 */
+
+/*
 	char buffer[13312];
 	int sectorsRead;
 	makeInterrupt21();
-	interrupt(0x21, 3, "messag", buffer, &sectorsRead);
+	sectorsRead = interrupt(0x21, 3, "messag", buffer, &sectorsRead);
 	if (sectorsRead>0)
 		interrupt(0x21, 0, buffer, 0, 0);
 
 	else
 		interrupt(0x21, 0, "messag not found\r\n", 0, 0);
 
-
+*/
 
 /*
 	char line[80];
@@ -45,11 +54,20 @@ void main(){
 //	printString("Entered Line is: ");
 	printString(line);
 */
-	while(1);
+
 }
 
 void terminate(){
-	while(1);
+	char shellname[6];
+	shellname[0]='s';
+	shellname[1]='h';
+	shellname[2]='e';
+	shellname[3]='l';
+	shellname[4]='l';
+	shellname[5]='\0';
+
+	executeProgram(shellname);
+
 }
 
 void executeProgram(char* name){
@@ -63,7 +81,7 @@ void executeProgram(char* name){
 	launchProgram(0x2000);
 }
 
-void readFile(char* fileName, char* buffer, int* sectorsReadptr){
+int readFile(char* fileName, char* buffer, int* sectorsReadptr){
 	char dir[512];
 	int fileEntry, fileExists, letter,s;
 	readSector(dir,2);
@@ -84,7 +102,7 @@ void readFile(char* fileName, char* buffer, int* sectorsReadptr){
 	if(fileExists==0){
 		printString("0");
 		*sectorsReadptr=0;
-		return;
+		return *sectorsReadptr;
 	}
 	for(s = 6;s<26;s++){
 		int sector = dir[fileEntry+s];
@@ -94,6 +112,7 @@ void readFile(char* fileName, char* buffer, int* sectorsReadptr){
 		buffer= buffer+512;
 		*sectorsReadptr = *sectorsReadptr+1;
 	}
+	return *sectorsReadptr;
 }
 
 void printString(char* chars){
